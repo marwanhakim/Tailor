@@ -11,10 +11,16 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon.ico'],
         devOptions: {
-          enabled: true
+          enabled: true,
+          type: 'module'
         },
         manifest: {
+          id: "/",
+          scope: "/",
+          start_url: "/",
           short_name: "نظام بكسل",
           name: "نظام بكسل - لإدارة الخياطة والطلبات",
           description: "تطبيق إدارة مشغل الخياطة، الحسابات والطلبات والزبائن بمرونة وكفاءة عالية أوفلاين.",
@@ -23,16 +29,27 @@ export default defineConfig(() => {
               src: "/icon-192.png",
               type: "image/png",
               sizes: "192x192",
-              purpose: "any maskable"
+              purpose: "any"
+            },
+            {
+              src: "/icon-192.png",
+              type: "image/png",
+              sizes: "192x192",
+              purpose: "maskable"
             },
             {
               src: "/icon-512.png",
               type: "image/png",
               sizes: "512x512",
-              purpose: "any maskable"
+              purpose: "any"
+            },
+            {
+              src: "/icon-512.png",
+              type: "image/png",
+              sizes: "512x512",
+              purpose: "maskable"
             }
           ],
-          start_url: "/",
           background_color: "#0f172a",
           theme_color: "#0f172a",
           display: "standalone",
