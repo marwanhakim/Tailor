@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Type, Download, Wifi, WifiOff, HardDrive, CheckCircle2, Smartphone, Database, Upload, ShieldCheck, RefreshCw, Cloud, CloudUpload, CloudDownload, LogOut, Bell, Calendar } from 'lucide-react';
+import { Moon, Sun, Type, Download, Wifi, WifiOff, CheckCircle2, Smartphone, Database, Upload, ShieldCheck, RefreshCw, Cloud, CloudUpload, CloudDownload, LogOut, Bell, Calendar } from 'lucide-react';
 import { showToast } from '../../utils';
 import { initDB, logAction } from '../../db';
 import { HistoryTab } from './HistoryTab';
@@ -364,7 +364,7 @@ export function SettingsTab() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 text-xs">
+          <div className="pt-2 text-xs">
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 flex items-center gap-2.5">
               {isOnline ? (
                 <Wifi size={18} className="text-emerald-400 flex-shrink-0" />
@@ -376,14 +376,6 @@ export function SettingsTab() {
                 <span className={`font-black ${isOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
                   {isOnline ? 'متصل بالإنترنت' : 'يعمل أوفلاين (بدون إنترنت)'}
                 </span>
-              </div>
-            </div>
-
-            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 flex items-center gap-2.5">
-              <HardDrive size={18} className="text-blue-400 flex-shrink-0" />
-              <div>
-                <span className="text-slate-400 font-medium block">ضغط الصور والتخزين:</span>
-                <span className="text-blue-300 font-black">ضغط أوتوماتيكي للصور (&lt;50KB)</span>
               </div>
             </div>
           </div>

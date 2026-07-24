@@ -7,20 +7,38 @@ import { OrdersTab } from './components/Tabs/OrdersTab';
 import { SettingsTab } from './components/Tabs/SettingsTab';
 import { ToastContainer } from './components/Toast';
 import { DailyTasksModal } from './components/DailyTasksModal';
+import { AppStartupNotificationModal } from './components/AppStartupNotificationModal';
+import { IntroSplashScreen } from './components/IntroSplashScreen';
 import { initDB } from './db';
 import { Scissors, Ruler, Sparkles, Bell } from 'lucide-react';
-import { getUpcomingDeliveries, checkAndNotifyDeliveries } from './utils/notifications';
+import { getUpcomingDeliveries, checkAndNotifyDeliveries, UpcomingDelivery } from './utils/notifications';
 import { performAutoDriveBackup, initAuth } from './lib/googleDrive';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('customers');
+  const [showIntro, setShowIntro] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   const [isDailyTasksOpen, setIsDailyTasksOpen] = useState(false);
+  const [isStartupModalOpen, setIsStartupModalOpen] = useState(false);
   const [urgentCount, setUrgentCount] = useState(0);
+  const [deliveriesData, setDeliveriesData] = useState<{
+    overdue: UpcomingDelivery[];
+    today: UpcomingDelivery[];
+    tomorrow: UpcomingDelivery[];
+    thisWeek: UpcomingDelivery[];
+    totalUrgentCount: number;
+  }>({
+    overdue: [],
+    today: [],
+    tomorrow: [],
+    thisWeek: [],
+    totalUrgentCount: 0,
+  });
 
   const refreshUrgentDeliveries = async () => {
     const data = await getUpcomingDeliveries();
+    setDeliveriesData(data);
     setUrgentCount(data.totalUrgentCount);
   };
 
@@ -36,9 +54,18 @@ export default function App() {
     document.documentElement.style.fontSize = rootSize;
 
     // Initialize DB & check notifications & perform auto Google Drive backup
-    initDB().then(() => {
-      refreshUrgentDeliveries();
+    initDB().then(async () => {
+      const data = await getUpcomingDeliveries();
+      setDeliveriesData(data);
+      setUrgentCount(data.totalUrgentCount);
       checkAndNotifyDeliveries();
+
+      // Show startup alert notification modal if there are overdue or near deliveries
+      const hasSeenNotify = sessionStorage.getItem('hasSeenStartupDeliveryNotify');
+      if (!hasSeenNotify && (data.overdue.length > 0 || data.today.length > 0 || data.tomorrow.length > 0)) {
+        setIsStartupModalOpen(true);
+        sessionStorage.setItem('hasSeenStartupDeliveryNotify', 'true');
+      }
 
       // Silent Auto Backup to Google Drive if user is logged in
       initAuth(() => {
@@ -168,6 +195,13 @@ export default function App() {
         {(activeTab === 'settings' || activeTab === 'history') && <SettingsTab />}
       </main>
 
+      <AppStartupNotificationModal
+        isOpen={isStartupModalOpen}
+        onClose={() => setIsStartupModalOpen(false)}
+        onOpenFullSchedule={() => setIsDailyTasksOpen(true)}
+        deliveries={deliveriesData}
+      />
+
       <DailyTasksModal 
         isOpen={isDailyTasksOpen} 
         onClose={() => {
@@ -179,6 +213,13 @@ export default function App() {
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
       <ToastContainer />
+
+      {showIntro && (
+        <IntroSplashScreen 
+          durationSeconds={3} 
+          onComplete={() => setShowIntro(false)} 
+        />
+      )}
     </div>
   );
 }

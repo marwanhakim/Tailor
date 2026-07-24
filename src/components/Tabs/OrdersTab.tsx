@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Order } from '../../types';
 import { initDB, logAction } from '../../db';
-import { Trash2, CheckCircle, Clock, XCircle, Scissors, PackageCheck, Edit, RefreshCw, X, Search, Calendar, Shirt, Ruler, ChevronDown, ChevronUp, Sparkles, Filter } from 'lucide-react';
+import { Trash2, CheckCircle, Clock, XCircle, Scissors, PackageCheck, Edit, RefreshCw, X, Search, Calendar, Shirt, Ruler, ChevronDown, ChevronUp, Sparkles, Filter, ArrowUpDown } from 'lucide-react';
 import { cn, formatCurrency, formatDate, getRemainingDaysText, showToast } from '../../utils';
 import { NewOrderModal } from './NewOrderModal';
 import { ConfirmModal } from '../ConfirmModal';
@@ -15,6 +15,7 @@ export function OrdersTab() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [customerFilter, setCustomerFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
+  const [sortBy, setSortBy] = useState<'delivery' | 'newest'>('delivery');
 
   const [statusConfirm, setStatusConfirm] = useState<{ orderId: string; newStatus: Order['status']; desc: string; cName: string; statusNameAr: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; desc: string } | null>(null);
@@ -136,6 +137,16 @@ export function OrdersTab() {
     const descMatch = (order.description || '').toLowerCase().includes(query);
 
     return nameMatch || descMatch;
+  }).sort((a, b) => {
+    if (sortBy === 'delivery') {
+      if (a.deliveryDate && b.deliveryDate) {
+        return a.deliveryDate - b.deliveryDate;
+      }
+      if (a.deliveryDate && !b.deliveryDate) return -1;
+      if (!a.deliveryDate && b.deliveryDate) return 1;
+      return b.date - a.date;
+    }
+    return b.date - a.date;
   });
 
   return (
@@ -206,6 +217,44 @@ export function OrdersTab() {
               <X size={16} />
             </button>
           )}
+        </div>
+
+        {/* Sorting Options Bar */}
+        <div className="flex items-center justify-between gap-2 pt-1 pb-1 border-t border-slate-100 dark:border-slate-700/60 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-extrabold">
+            <ArrowUpDown size={14} className="text-indigo-500" />
+            <span>ترتيب حسب:</span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setSortBy('delivery')}
+              className={cn(
+                "px-3 py-1.5 text-xs rounded-lg font-black transition-all flex items-center gap-1.5 active:scale-95",
+                sortBy === 'delivery'
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              )}
+            >
+              <Clock size={13} />
+              <span>الأقرب تسليماً</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortBy('newest')}
+              className={cn(
+                "px-3 py-1.5 text-xs rounded-lg font-black transition-all flex items-center gap-1.5 active:scale-95",
+                sortBy === 'newest'
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              )}
+            >
+              <Calendar size={13} />
+              <span>الأحدث تاريخاً</span>
+            </button>
+          </div>
         </div>
 
         {/* Status Filter Tabs */}

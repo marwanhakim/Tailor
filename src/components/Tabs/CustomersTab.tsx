@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Customer } from '../../types';
 import { initDB, logAction } from '../../db';
-import { UserPlus, Phone, Search, Trash2, Edit, Users, X, Plus, Clock, User, MessageSquare, ChevronLeft, ArrowUpRight, MessageCircle } from 'lucide-react';
+import { UserPlus, Phone, Search, Trash2, Edit, Users, X, Plus, Clock, User, MessageSquare, ChevronLeft, ArrowUpRight, MessageCircle, AlertCircle } from 'lucide-react';
 import { cn, showToast, formatIraqiWhatsAppNumber } from '../../utils';
 import { NewOrderModal } from './NewOrderModal';
 import { ConfirmModal } from '../ConfirmModal';
 
 export function CustomersTab() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [debtCustomerIds, setDebtCustomerIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -23,6 +24,36 @@ export function CustomersTab() {
   const loadCustomers = async () => {
     const db = await initDB();
     const all = await db.getAllFromIndex('customers', 'by-name');
+    const allAccounts = await db.getAll('accounts');
+
+    // Group accounts by customerId or customerName to calculate remaining debt
+    const debtMapByCustId = new Map<string, number>();
+    const debtMapByName = new Map<string, number>();
+
+    allAccounts.forEach(acc => {
+      const isPayable = acc.type === 'payable';
+      const amount = acc.amount || 0;
+      const delta = isPayable ? -amount : amount;
+
+      if (acc.customerId) {
+        debtMapByCustId.set(acc.customerId, (debtMapByCustId.get(acc.customerId) || 0) + delta);
+      }
+      if (acc.customerName) {
+        const nameKey = acc.customerName.trim().toLowerCase();
+        debtMapByName.set(nameKey, (debtMapByName.get(nameKey) || 0) + delta);
+      }
+    });
+
+    const activeDebts = new Set<string>();
+    all.forEach(c => {
+      const debtById = debtMapByCustId.get(c.id) || 0;
+      const debtByName = debtMapByName.get(c.name.trim().toLowerCase()) || 0;
+      if (debtById > 0 || debtByName > 0) {
+        activeDebts.add(c.id);
+      }
+    });
+
+    setDebtCustomerIds(activeDebts);
     setCustomers(all);
   };
 
@@ -299,9 +330,24 @@ export function CustomersTab() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                      {customer.name}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                        {customer.name}
+                      </h3>
+                      {debtCustomerIds.has(customer.id) && (
+                        <span 
+                          onClick={() => {
+                            localStorage.setItem('customerAccountFilter', customer.id);
+                            window.dispatchEvent(new CustomEvent('changeTab', { detail: 'accounts' }));
+                          }}
+                          className="inline-flex items-center gap-1 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 text-xs font-black px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-800 shrink-0 cursor-pointer hover:bg-rose-200 dark:hover:bg-rose-900 transition-colors shadow-sm"
+                          title="اضغط للانتقال لحسابات الزبون"
+                        >
+                          <AlertCircle size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                          <span>لديه ديون</span>
+                        </span>
+                      )}
+                    </div>
                     {customer.phone && (
                       <a 
                         href={`tel:${customer.phone}`} 
