@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Cairo", sans-serif;
+}
+
+body {
+  font-family: 'Cairo', sans-serif;
+  @apply bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Global Dark Mode Overrides */
+html.dark .bg-white { background-color: #1e293b !important; } /* slate-800 */
+html.dark .bg-slate-50 { background-color: #0f172a !important; } /* slate-900 */
+html.dark .bg-slate-100 { background-color: #334155 !important; } /* slate-700 */
+html.dark .bg-slate-200 { background-color: #475569 !important; } /* slate-600 */
+html.dark .text-slate-900 { color: #f8fafc !important; } /* slate-50 */
+html.dark .text-slate-800 { color: #f1f5f9 !important; } /* slate-100 */
+html.dark .text-slate-700 { color: #e2e8f0 !important; } /* slate-200 */
+html.dark .text-slate-600 { color: #cbd5e1 !important; } /* slate-300 */
+html.dark .text-slate-500 { color: #94a3b8 !important; } /* slate-400 */
+html.dark .border-slate-200, html.dark .border-slate-100 { border-color: #334155 !important; }
+html.dark .border-slate-300 { border-color: #475569 !important; }
+html.dark .text-gray-500 { color: #94a3b8 !important; }
+html.dark .text-gray-400 { color: #64748b !important; }
+html.dark .text-gray-300 { color: #475569 !important; }
+
+/* Make scrollbars less intrusive for a mobile feel on desktop */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}

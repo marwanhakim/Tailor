@@ -1,0 +1,10 @@
+{
+  "name": "نظام بكسل",
+  "description": "نظام بكسل لإدارة شؤون الخياطة، الزبائن، الحسابات والطلبات.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
