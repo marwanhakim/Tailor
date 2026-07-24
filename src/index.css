@@ -6,10 +6,15 @@
   --font-sans: "Cairo", sans-serif;
 }
 
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: 'Cairo', sans-serif;
   @apply bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 /* Global Dark Mode Overrides */
