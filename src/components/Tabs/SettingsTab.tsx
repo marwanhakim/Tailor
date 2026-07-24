@@ -381,7 +381,27 @@ export function SettingsTab() {
             )}
           </div>
 
-          <div className="pt-2 text-xs">
+          <div className="pt-2 text-xs space-y-3">
+            {isInIframe && !isInstalled && (
+              <div className="bg-amber-500/15 border border-amber-500/40 rounded-xl p-3.5 text-xs text-amber-100 space-y-2.5">
+                <div className="font-bold flex items-center gap-2 text-amber-300 text-xs">
+                  <Sparkles size={16} className="shrink-0 text-amber-400" />
+                  <span>سبب ظهور "حفظ اختصار" بدلاً من "تثبيت التطبيق":</span>
+                </div>
+                <p className="leading-relaxed text-amber-100/90 text-[11px]">
+                  أنت تتصفح التطبيق حالياً من داخل إطار مضمن (Iframe) على <code className="bg-black/30 px-1 py-0.5 rounded text-amber-200 font-mono">pixeliraq.com</code>. تمنع المتصفحات أماناً إشعار التثبيت المباشر داخل الإطارات.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.open('https://tailor.pixeliraq.com/', '_blank')}
+                  className="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <ExternalLink size={15} />
+                  <span>فتح رابط التطبيق المستقل (tailor.pixeliraq.com) لتثبيته فوراً</span>
+                </button>
+              </div>
+            )}
+
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 flex items-center gap-2.5">
               {isOnline ? (
                 <Wifi size={18} className="text-emerald-400 flex-shrink-0" />
@@ -625,7 +645,7 @@ export function SettingsTab() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => window.open(window.location.href, '_blank')}
+                      onClick={() => window.open('https://tailor.pixeliraq.com/', '_blank')}
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95"
                     >
                       <ExternalLink size={16} />
