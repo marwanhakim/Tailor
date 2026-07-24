@@ -39,6 +39,7 @@ export interface Order {
   date: number;
   deliveryDate?: number;
   photo?: string;
+  voiceNote?: string;
   measurements?: {
     shoulder?: string;
     bust?: string;

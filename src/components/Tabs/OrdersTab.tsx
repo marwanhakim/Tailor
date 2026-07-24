@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Order } from '../../types';
 import { initDB, logAction } from '../../db';
-import { Trash2, CheckCircle, Clock, XCircle, Scissors, PackageCheck, Edit, RefreshCw, X, Search, Calendar, Shirt, Ruler, ChevronDown, ChevronUp, Sparkles, Filter, ArrowUpDown } from 'lucide-react';
+import { Trash2, CheckCircle, Clock, XCircle, Scissors, PackageCheck, Edit, RefreshCw, X, Search, Calendar, Shirt, Ruler, ChevronDown, ChevronUp, Sparkles, Filter, ArrowUpDown, Mic } from 'lucide-react';
 import { cn, formatCurrency, formatDate, getRemainingDaysText, showToast } from '../../utils';
 import { NewOrderModal } from './NewOrderModal';
 import { ConfirmModal } from '../ConfirmModal';
@@ -390,6 +390,15 @@ export function OrdersTab() {
                     <div className="text-slate-800 dark:text-slate-200 text-base font-medium leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60">
                       <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">تفاصيل الطلب والقماش:</p>
                       {order.description}
+                      
+                      {order.voiceNote && (
+                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                          <div className="text-indigo-600 dark:text-indigo-400 p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
+                            <Mic size={16} />
+                          </div>
+                          <audio controls src={order.voiceNote} className="h-8 max-w-[200px]" />
+                        </div>
+                      )}
                     </div>
 
                     {order.photo && (

@@ -10,7 +10,7 @@ import { DailyTasksModal } from './components/DailyTasksModal';
 import { AppStartupNotificationModal } from './components/AppStartupNotificationModal';
 import { IntroSplashScreen } from './components/IntroSplashScreen';
 import { initDB } from './db';
-import { Scissors, Ruler, Sparkles, Bell } from 'lucide-react';
+import { Scissors, Ruler, Sparkles, Bell, Download } from 'lucide-react';
 import { getUpcomingDeliveries, checkAndNotifyDeliveries, UpcomingDelivery } from './utils/notifications';
 import { performAutoDriveBackup, initAuth } from './lib/googleDrive';
 
@@ -22,6 +22,7 @@ export default function App() {
   const [isDailyTasksOpen, setIsDailyTasksOpen] = useState(false);
   const [isStartupModalOpen, setIsStartupModalOpen] = useState(false);
   const [urgentCount, setUrgentCount] = useState(0);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [deliveriesData, setDeliveriesData] = useState<{
     overdue: UpcomingDelivery[];
     today: UpcomingDelivery[];
@@ -40,6 +41,15 @@ export default function App() {
     const data = await getUpcomingDeliveries();
     setDeliveriesData(data);
     setUrgentCount(data.totalUrgentCount);
+  };
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
   };
 
   useEffect(() => {
@@ -100,10 +110,16 @@ export default function App() {
       refreshUrgentDeliveries();
     };
 
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('changeTab', handleTabChange);
     window.addEventListener('openDailyTasksModal', handleOpenDailyTasks);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => {
       clearTimeout(syncTimer);
@@ -111,6 +127,7 @@ export default function App() {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('changeTab', handleTabChange);
       window.removeEventListener('openDailyTasksModal', handleOpenDailyTasks);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
@@ -167,6 +184,18 @@ export default function App() {
 
           {/* Quick Notification Bell & Agenda Trigger */}
           <div className="flex items-center gap-2">
+            {deferredPrompt && (
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="relative p-2.5 bg-emerald-600/80 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl text-emerald-50 transition-all active:scale-95 flex items-center gap-2 shadow-inner"
+                title="تثبيت التطبيق"
+              >
+                <Download size={18} />
+                <span className="text-xs font-black hidden sm:inline">تثبيت التطبيق</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => {
