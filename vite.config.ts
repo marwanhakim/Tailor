@@ -17,6 +17,10 @@ export default defineConfig(() => {
           enabled: true,
           type: 'module'
         },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+          navigateFallback: '/',
+        },
         manifest: {
           id: "/",
           scope: "/",

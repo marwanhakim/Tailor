@@ -24,7 +24,11 @@ export function SettingsTab() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
     (window as any).deferredInstallPrompt || null
   );
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches || 
+    (navigator as any).standalone ||
+    localStorage.getItem('pwa-installed') === 'true'
+  );
   const [showInstallGuideModal, setShowInstallGuideModal] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -144,6 +148,7 @@ export function SettingsTab() {
     // Check if running as standalone PWA
     if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
       setIsInstalled(true);
+      localStorage.setItem('pwa-installed', 'true');
     }
 
     if ((window as any).deferredInstallPrompt) {
@@ -160,6 +165,8 @@ export function SettingsTab() {
       setIsInstalled(true);
       setDeferredPrompt(null);
       (window as any).deferredInstallPrompt = null;
+      localStorage.setItem('pwa-installed', 'true');
+      showToast('تم تثبيت نظام بكسل بنجاح! يمكنك الوصول إليه الآن مباشرة من الشاشة الرئيسية.', 'success');
     };
 
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -294,8 +301,9 @@ export function SettingsTab() {
         await promptEvent.prompt();
         const choice = await promptEvent.userChoice;
         if (choice && choice.outcome === 'accepted') {
-          showToast('تم البدء في تنصيب نظام بكسل على جهازك بنجاح!', 'success');
+          showToast('تمت عملية تثبيت التطبيق بنجاح! يمكنك الآن الوصول إليه مباشرة من شاشتك الرئيسية.', 'success');
           setIsInstalled(true);
+          localStorage.setItem('pwa-installed', 'true');
         }
         setDeferredPrompt(null);
         (window as any).deferredInstallPrompt = null;
@@ -627,7 +635,7 @@ export function SettingsTab() {
                 )}
 
                 {/* Direct Trigger Button if Prompt is ready */}
-                {(deferredPrompt || (window as any).deferredInstallPrompt) && (
+                {!isInstalled && (deferredPrompt || (window as any).deferredInstallPrompt) && (
                   <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3">
                     <div>
                       <h4 className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">التثبيت المباشر متاح الآن!</h4>
