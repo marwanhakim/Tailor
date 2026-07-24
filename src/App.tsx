@@ -112,7 +112,9 @@ export default function App() {
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e);
+      window.dispatchEvent(new CustomEvent('pwa-installable'));
     };
 
     window.addEventListener('online', handleOnline);

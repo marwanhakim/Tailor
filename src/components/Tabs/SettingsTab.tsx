@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Type, Download, Wifi, WifiOff, CheckCircle2, Smartphone, Database, Upload, ShieldCheck, RefreshCw, Cloud, CloudUpload, CloudDownload, LogOut, Bell, Calendar } from 'lucide-react';
+import { Moon, Sun, Type, Download, Wifi, WifiOff, CheckCircle2, Smartphone, Database, Upload, ShieldCheck, RefreshCw, Cloud, CloudUpload, CloudDownload, LogOut, Bell, Calendar, X, ExternalLink, HelpCircle, Sparkles, Share2, MoreVertical } from 'lucide-react';
 import { showToast } from '../../utils';
 import { initDB, logAction } from '../../db';
 import { HistoryTab } from './HistoryTab';
@@ -21,8 +21,12 @@ export function SettingsTab() {
   });
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
+    (window as any).deferredInstallPrompt || null
+  );
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showInstallGuideModal, setShowInstallGuideModal] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [googleUser, setGoogleUser] = useState<User | null>(null);
@@ -135,24 +139,47 @@ export function SettingsTab() {
   };
 
   useEffect(() => {
+    setIsInIframe(window.self !== window.top);
+
     // Check if running as standalone PWA
     if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
       setIsInstalled(true);
     }
 
+    if ((window as any).deferredInstallPrompt) {
+      setDeferredPrompt((window as any).deferredInstallPrompt);
+    }
+
+    const handleInstallable = () => {
+      if ((window as any).deferredInstallPrompt) {
+        setDeferredPrompt((window as any).deferredInstallPrompt);
+      }
+    };
+
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      (window as any).deferredInstallPrompt = null;
+    };
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      (window as any).deferredInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
+    window.addEventListener('pwa-installable', handleInstallable);
+    window.addEventListener('pwa-installed', handleInstalled);
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      window.removeEventListener('pwa-installable', handleInstallable);
+      window.removeEventListener('pwa-installed', handleInstalled);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -260,42 +287,24 @@ export function SettingsTab() {
     }
   };
 
-  useEffect(() => {
-    // Check if running as standalone PWA
-    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
-      setIsInstalled(true);
-    }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        showToast('جاري تنصيب نظام بكسل على جهازك...', 'success');
-        setIsInstalled(true);
+    const promptEvent = deferredPrompt || (window as any).deferredInstallPrompt;
+    if (promptEvent) {
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          showToast('تم البدء في تنصيب نظام بكسل على جهازك بنجاح!', 'success');
+          setIsInstalled(true);
+        }
+        setDeferredPrompt(null);
+        (window as any).deferredInstallPrompt = null;
+      } catch (e) {
+        console.error('Install error:', e);
+        setShowInstallGuideModal(true);
       }
-      setDeferredPrompt(null);
     } else {
-      showToast('لتثبيت التطبيق: افتح قائمة المتصفح واختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"', 'info');
+      setShowInstallGuideModal(true);
     }
   };
 
@@ -568,6 +577,122 @@ export function SettingsTab() {
 
         {/* History Section */}
         <HistoryTab />
+
+        {/* Install Guide Modal */}
+        {showInstallGuideModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[80] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 p-5 text-white flex justify-between items-center relative overflow-hidden shrink-0">
+                <div className="flex items-center gap-3 relative z-10">
+                  <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-sm">
+                    <Smartphone size={24} className="text-indigo-200" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-lg">تثبيت نظام بكسل على جهازك</h3>
+                    <p className="text-xs text-indigo-200 font-medium">خطوات بسيطة لإضافة التطبيق لشاشتك الرئيسية</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuideModal(false)}
+                  className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all text-white backdrop-blur-sm relative z-10 active:scale-95"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-5 overflow-y-auto text-slate-800 dark:text-slate-100 text-sm">
+                
+                {/* Notice if in iframe / preview mode */}
+                {isInIframe && (
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/60 dark:to-slate-800/80 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-800/60 space-y-3">
+                    <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-300 font-bold">
+                      <Sparkles size={18} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      <span>تصفح التطبيق في نافذة جديدة للتثبيت المباشر</span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      أنت حالياً تتصفح التطبيق داخل نافذة المعاينة. لتثبيت نظام بكسل مباشرة كـ تطبيق حقيقي على الهاتف أو الكمبيوتر، يُرجى فتح رابط التطبيق في نافذة متصفح مستقلة.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => window.open(window.location.href, '_blank')}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95"
+                    >
+                      <ExternalLink size={16} />
+                      <span>فتح التطبيق في نافذة جديدة مستقلة</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Direct Trigger Button if Prompt is ready */}
+                {(deferredPrompt || (window as any).deferredInstallPrompt) && (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">التثبيت المباشر متاح الآن!</h4>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">اضغط للبدء في تثبيت التطبيق فوراً</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleInstallClick}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                    >
+                      <Download size={16} />
+                      <span>تثبيت الآن</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Manual Steps Guide */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <HelpCircle size={18} className="text-indigo-500" />
+                    <span>طريقة التثبيت اليدوي من المتصفح:</span>
+                  </h4>
+
+                  {/* Android / Chrome */}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 text-xs">
+                      <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px]">1</span>
+                      <span>على متصفح كروم / أندرويد (Google Chrome):</span>
+                    </div>
+                    <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside pr-2 leading-relaxed">
+                      <li>اضغط على قائمة المتصفح (النقاط الثلاث <MoreVertical size={14} className="inline text-slate-500" /> أعلى أو أسفل الشاشة).</li>
+                      <li>اختر <b>"تثبيت التطبيق"</b> (Install app) أو <b>"إضافة إلى الشاشة الرئيسية"</b> (Add to Home screen).</li>
+                      <li>تأكيد التثبيت وسينزل التطبيق على شاشتك الرئيسية مباشرة.</li>
+                    </ul>
+                  </div>
+
+                  {/* iPhone / Safari */}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 text-xs">
+                      <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px]">2</span>
+                      <span>على هواتف آيفون / متصفح سفاري (iPhone Safari):</span>
+                    </div>
+                    <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside pr-2 leading-relaxed">
+                      <li>اضغط على زر المشاركة (<Share2 size={14} className="inline text-indigo-500" /> Share) في أسفل الشاشة.</li>
+                      <li>اسحب القائمة لأسفل واختر <b>"إضافة إلى الشاشة الرئيسية"</b> (Add to Home Screen).</li>
+                      <li>اضغط على <b>"إضافة"</b> (Add) بالأعلى لتثبيته كتطبيق مستقل.</li>
+                    </ul>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuideModal(false)}
+                  className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold px-5 py-2 rounded-xl text-xs transition-colors"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
